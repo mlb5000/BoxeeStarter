@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoxeeStarter", "BoxeeStarter\BoxeeStarter.csproj", "{273F3B66-ACC6-4D1D-BA1A-269B2145994B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoxeeStarter.Tests.Unit", "BoxeeStarter.Tests.Unit\BoxeeStarter.Tests.Unit.csproj", "{844985E4-A474-401F-8145-A6D84543A2DF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{273F3B66-ACC6-4D1D-BA1A-269B2145994B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{273F3B66-ACC6-4D1D-BA1A-269B2145994B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{273F3B66-ACC6-4D1D-BA1A-269B2145994B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{273F3B66-ACC6-4D1D-BA1A-269B2145994B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{844985E4-A474-401F-8145-A6D84543A2DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{844985E4-A474-401F-8145-A6D84543A2DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{844985E4-A474-401F-8145-A6D84543A2DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{844985E4-A474-401F-8145-A6D84543A2DF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
