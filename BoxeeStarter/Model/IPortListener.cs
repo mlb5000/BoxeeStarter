@@ -1,4 +1,6 @@
-﻿namespace BoxeeStarter.Model
+﻿using BoxeeStarter.Utilities.Async;
+
+namespace BoxeeStarter.Model
 {
     public interface IPortListener : IAsyncWorker
     {

@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace BoxeeStarter.Model
+namespace BoxeeStarter.Utilities.Async
 {
     public interface IAsyncWorker
     {

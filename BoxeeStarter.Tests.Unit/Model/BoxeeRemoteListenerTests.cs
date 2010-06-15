@@ -1,11 +1,13 @@
 ﻿using System;
 using BoxeeStarter.Model;
 using BoxeeStarter.Utilities;
+using BoxeeStarter.Utilities.Async;
 using BoxeeStarter.Utilities.Directories;
 using BoxeeStarter.Utilities.Logging;
 using BoxeeStarter.Utilities.Processes;
 using NUnit.Framework;
 using Rhino.Mocks;
+using Rhino.Mocks.Interfaces;
 
 namespace BoxeeStarter.Tests.Unit.Model
 {
@@ -38,6 +40,7 @@ namespace BoxeeStarter.Tests.Unit.Model
         protected UdpListener UdpListener { get; set; }
         protected ProcessStarter ProcStarter { get; set; }
         protected DirectoryHelper DirHelper { get; set; }
+        protected IAsyncNotifier ProcNotifier { get; set; }
 
         [Test]
         public void ListenForRemote_BoxeeIsRunning_Returns()
@@ -61,6 +64,7 @@ namespace BoxeeStarter.Tests.Unit.Model
             UdpListener = Mocks.StrictMock<UdpListener>();
             ProcStarter = MockRepository.GenerateStub<ProcessStarter>();
             DirHelper = MockRepository.GenerateStub<DirectoryHelper>();
+            ProcNotifier = Mocks.StrictMock<IAsyncNotifier>();
             
             Listener = new BoxeeRemoteListener
                            {
@@ -68,13 +72,18 @@ namespace BoxeeStarter.Tests.Unit.Model
                                ProcFinder = ProcFinder,
                                Listener = UdpListener,
                                ProcStarter = ProcStarter,
-                               DirHelper = DirHelper
+                               DirHelper = DirHelper,
+                               ProcNotifier = ProcNotifier
                            };
 
             Mocks.BackToRecordAll();
             Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
             Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(RemoteDiscoverXML).Repeat.Any();
-
+            ProcNotifier.NotifyMe += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
+            
+            
             Mocks.ReplayAll();
             Listener.ListenForRemote();
         }
@@ -87,6 +96,7 @@ namespace BoxeeStarter.Tests.Unit.Model
             UdpListener = Mocks.StrictMock<UdpListener>();
             ProcStarter = Mocks.StrictMock<ProcessStarter>();
             DirHelper = Mocks.StrictMock<DirectoryHelper>();
+            ProcNotifier = Mocks.StrictMock<IAsyncNotifier>();
 
             Listener = new BoxeeRemoteListener
                            {
@@ -94,7 +104,8 @@ namespace BoxeeStarter.Tests.Unit.Model
                                ProcFinder = ProcFinder,
                                Listener = UdpListener,
                                ProcStarter = ProcStarter,
-                               DirHelper = DirHelper
+                               DirHelper = DirHelper,
+                               ProcNotifier = ProcNotifier
                            };
 
             Mocks.BackToRecordAll();
@@ -103,6 +114,9 @@ namespace BoxeeStarter.Tests.Unit.Model
             Expect.Call(DirHelper.GetProgramDirFor("Boxee")).Return("Something");
             ProcStarter.StartProcess(null);
             LastCall.IgnoreArguments();
+            ProcNotifier.NotifyMe += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
 
             Mocks.ReplayAll();
             Listener.ListenForRemote();
@@ -116,6 +130,7 @@ namespace BoxeeStarter.Tests.Unit.Model
             UdpListener = Mocks.StrictMock<UdpListener>();
             ProcStarter = Mocks.StrictMock<ProcessStarter>();
             DirHelper = MockRepository.GenerateStub<DirectoryHelper>();
+            ProcNotifier = Mocks.StrictMock<IAsyncNotifier>();
 
             Listener = new BoxeeRemoteListener
                            {
@@ -123,12 +138,16 @@ namespace BoxeeStarter.Tests.Unit.Model
                                ProcFinder = ProcFinder,
                                Listener = UdpListener,
                                ProcStarter = ProcStarter,
-                               DirHelper = DirHelper
+                               DirHelper = DirHelper,
+                               ProcNotifier = ProcNotifier
                            };
 
             Mocks.BackToRecordAll();
             Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
             Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(NotXml).Repeat.Any();
+            ProcNotifier.NotifyMe += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
 
             Mocks.ReplayAll();
             Listener.ListenForRemote();
@@ -142,6 +161,7 @@ namespace BoxeeStarter.Tests.Unit.Model
             UdpListener = Mocks.StrictMock<UdpListener>();
             ProcStarter = Mocks.StrictMock<ProcessStarter>();
             DirHelper = Mocks.StrictMock<DirectoryHelper>();
+            ProcNotifier = Mocks.StrictMock<IAsyncNotifier>();
 
             Listener = new BoxeeRemoteListener
                            {
@@ -149,16 +169,56 @@ namespace BoxeeStarter.Tests.Unit.Model
                                ProcFinder = ProcFinder,
                                Listener = UdpListener,
                                ProcStarter = ProcStarter,
-                               DirHelper = DirHelper
+                               DirHelper = DirHelper,
+                               ProcNotifier = ProcNotifier
                            };
 
             Mocks.BackToRecordAll();
             Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
             Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(RemoteDiscoverXML).Repeat.Any();
             Expect.Call(DirHelper.GetProgramDirFor("Boxee")).Return(null);
+            ProcNotifier.NotifyMe += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
 
             Mocks.ReplayAll();
             Listener.ListenForRemote();
+        }
+
+        [Test]
+        public void ListenForRemote_BoxeeStartsInBackground_StopsListening()
+        {
+            Logger = MockRepository.GenerateStub<ILogger>();
+            ProcFinder = Mocks.StrictMock<ProcessFinder>();
+            UdpListener = Mocks.StrictMock<UdpListener>();
+            ProcStarter = Mocks.StrictMock<ProcessStarter>();
+            DirHelper = Mocks.StrictMock<DirectoryHelper>();
+            ProcNotifier = Mocks.StrictMock<IAsyncNotifier>();
+
+            Listener = new BoxeeRemoteListener
+            {
+                Logger = Logger,
+                ProcFinder = ProcFinder,
+                Listener = UdpListener,
+                ProcStarter = ProcStarter,
+                DirHelper = DirHelper,
+                ProcNotifier = ProcNotifier
+            };
+
+            Mocks.BackToRecordAll();
+            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
+            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return("").Repeat.Any();
+            ProcNotifier.NotifyMe += null;
+            var raiser = LastCall.IgnoreArguments().GetEventRaiser();
+            ProcNotifier.Start();
+            UdpListener.InterruptClient();
+            ProcNotifier.NotifyMe -= null;
+            LastCall.IgnoreArguments();
+
+            Mocks.ReplayAll();
+            Listener.ListenForRemote();
+
+            raiser.Raise(this, EventArgs.Empty);
         }
     }
 }

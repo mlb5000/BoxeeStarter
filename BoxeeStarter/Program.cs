@@ -22,11 +22,12 @@ namespace BoxeeStarter
 
             var listener = new BoxeeRemoteListener
                                {
-                                   ProcFinder = new ProcessFinder(), 
+                                   ProcFinder = new ProcessFinder(),
                                    Logger = new EventLogger(),
                                    ProcStarter = new ProcessStarter(),
                                    DirHelper = new DirectoryHelper(),
-                                   Listener = new UdpListener()
+                                   Listener = new UdpListener(),
+                                   ProcNotifier = new ProcessNotifier("BOXEE")
                                };
             var mainForm = new SettingsForm();
             ViewObserver.Observe(mainForm, listener);

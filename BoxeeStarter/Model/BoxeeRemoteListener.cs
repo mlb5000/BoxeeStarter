@@ -1,24 +1,23 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
-using System.Net.Sockets;
 using System.Threading;
 using System.Xml;
 using BoxeeStarter.Utilities;
+using BoxeeStarter.Utilities.Async;
 using BoxeeStarter.Utilities.Directories;
 using BoxeeStarter.Utilities.Logging;
 using BoxeeStarter.Utilities.Processes;
 
 namespace BoxeeStarter.Model
 {
-    public class BoxeeRemoteListener : IPortListener
+    public class BoxeeRemoteListener : AsyncWorkerBase, IPortListener
     {
         private const int DefaultPort = 2562;
-        private bool _shutdown;
 
         public BoxeeRemoteListener()
             : this(DefaultPort)
         {
+            OnStop += StopListening;
         }
 
         public BoxeeRemoteListener(int portNum)
@@ -32,46 +31,29 @@ namespace BoxeeStarter.Model
         public ILogger Logger { get; set; }
         public ProcessStarter ProcStarter { get; set; }
         public DirectoryHelper DirHelper { get; set; }
+        public IAsyncNotifier ProcNotifier { get; set; }
 
         #region IPortListener Members
 
-        public Thread WorkerThread { get; set; }
-
-        public void Start()
-        {
-            var start = new ParameterizedThreadStart(ThreadProc);
-            WorkerThread = new Thread(start);
-            WorkerThread.Start(this);
-        }
-
-        public void Stop()
-        {
-            StopListening();
-        }
-
         public void Listen()
         {
-            while (!_shutdown)
+            try
             {
-                try
-                {
-                    ListenForRemote();
-                    Thread.Sleep(2000);
-                }
-                catch (Exception)
-                {
-                    break;   
-                }
+                ListenForRemote();
+                Thread.Sleep(2000);
             }
-
-            Logger.Log("Leaving receive loop.");
+            catch
+            {
+                Logger.Log("Exception during ListenForRemote.");
+                ProcNotifier.NotifyMe -= BoxeeProcessStarted;
+            }
         }
 
         #endregion
 
-        private static void ThreadProc(object param)
+        public override void DoWork()
         {
-            ((IPortListener) param).Listen();
+            Listen();
         }
 
         public void ListenForRemote()
@@ -82,6 +64,8 @@ namespace BoxeeStarter.Model
                 return;
             }
 
+            ProcNotifier.NotifyMe += BoxeeProcessStarted;
+            ProcNotifier.Start();
             Logger.Log(String.Format("Now waiting for a connection on port {0}", PortNumber));
             string message = Listener.ListenForUdpPacket(PortNumber);
 
@@ -100,6 +84,13 @@ namespace BoxeeStarter.Model
             }
 
             StartWindowedProcess(boxeeDir + "\\BOXEE.exe", "-p", boxeeDir);
+        }
+
+        private void BoxeeProcessStarted(object sender, EventArgs e)
+        {
+            ProcNotifier.NotifyMe -= BoxeeProcessStarted;
+            Logger.Log("Detected Boxee starting in the background. Stopping the UDP listener.");
+            Listener.InterruptClient();
         }
 
         private bool MessageIsFromIphoneRemote(string message)
@@ -123,7 +114,10 @@ namespace BoxeeStarter.Model
                 XmlAttribute challenge = node.Attributes["challenge"];
 
                 if (command.Value != "discover" || app.Value != "iphone_remote" || challenge.Value != "alohathere!")
+                {
+                    Logger.Log("Message is either not a discover message, or not from a Boxee mobile remote.");
                     return false;
+                }
             }
             catch (Exception)
             {
@@ -145,10 +139,10 @@ namespace BoxeeStarter.Model
             ProcStarter.StartProcess(info);
         }
 
-        public void StopListening()
+        public void StopListening(object sender, EventArgs e)
         {
-            _shutdown = true;
             Listener.InterruptClient();
+            ProcNotifier.Stop();
         }
     }
 }
