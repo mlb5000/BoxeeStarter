@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Windows.Forms;
 using BoxeeStarter.Model;
+using BoxeeStarter.Utilities;
+using BoxeeStarter.Utilities.Directories;
+using BoxeeStarter.Utilities.Logging;
+using BoxeeStarter.Utilities.Processes;
 using BoxeeStarter.View;
 
 namespace BoxeeStarter
@@ -16,7 +20,14 @@ namespace BoxeeStarter
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            var listener = new PortListener();
+            var listener = new BoxeeRemoteListener
+                               {
+                                   ProcFinder = new ProcessFinder(), 
+                                   Logger = new EventLogger(),
+                                   ProcStarter = new ProcessStarter(),
+                                   DirHelper = new DirectoryHelper(),
+                                   Listener = new UdpListener()
+                               };
             var mainForm = new SettingsForm();
             ViewObserver.Observe(mainForm, listener);
 

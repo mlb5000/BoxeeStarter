@@ -50,7 +50,7 @@
   <ItemGroup>
     <Compile Include="Model\IAsyncWorker.cs" />
     <Compile Include="Model\IPortListener.cs" />
-    <Compile Include="Model\PortListener.cs" />
+    <Compile Include="Model\BoxeeRemoteListener.cs" />
     <Compile Include="Presenter\SettingsPresenter.cs" />
     <Compile Include="SettingsForm.cs">
       <SubType>Form</SubType>
@@ -82,6 +82,13 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Utilities\Directories\DirectoryHelper.cs" />
+    <Compile Include="Utilities\Logging\ConsoleLogger.cs" />
+    <Compile Include="Utilities\Logging\EventLogger.cs" />
+    <Compile Include="Utilities\Logging\ILogger.cs" />
+    <Compile Include="Utilities\Processes\ProcessFinder.cs" />
+    <Compile Include="Utilities\Processes\ProcessStarter.cs" />
+    <Compile Include="Utilities\UdpListener.cs" />
     <Compile Include="View\ISettingsView.cs" />
     <Compile Include="View\ViewObserver.cs" />
   </ItemGroup>
