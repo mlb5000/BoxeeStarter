@@ -16,7 +16,7 @@ To run Boxee Starter
 
 # Run BoxeeStarter.exe (you could probably drop this into the StartUp folder if you wish to have it run at startup)
 # Launch your Boxee Remote application (iPhone has been tested so far).
-# While the Boxee Remote is trying to discover Boxee nodes, Boxee should launch on the system which Boxee Starter is running on.
+# While the Boxee Remote is trying to discover Boxee nodes, Boxee should launch on the system which Boxee Starter is running on.  **If Boxee does not launch, you may need to open up UDP Port 2562 on your firewall(s).**
 # The initial search which triggers the Boxee launch will time out, but simply tap "Search for hosts" and Boxee should find the desired host.
 # Use Boxee like normal!
 
