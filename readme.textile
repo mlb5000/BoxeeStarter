@@ -1,0 +1,32 @@
+h1. Boxee Starter
+
+h2. Purpose
+
+I developed this application out of a desire to have Boxee start automatically on my HTPC when I open up the Boxee Remote iPhone app.  This has been requested before but the Boxee team (understandably) wants to have a solution that is platform independent.  Unfortunatly this isn't there yet, but you have to start somewhere.
+
+h2. System Requirements
+
+# Windows (unfortunately no other platforms are yet supported)
+# .NET Framework 3.5 or later
+# Boxee installed in the default location ("Program Files/Boxee", or "Program Files (x86)/Boxee" on 64-bit systems)
+
+h2. Instructions
+
+To run Boxee Starter
+
+# Run BoxeeStarter.exe (you could probably drop this into the StartUp folder if you wish to have it run at startup)
+# Launch your Boxee Remote application (iPhone has been tested so far).
+# While the Boxee Remote is trying to discover Boxee nodes, Boxee should launch on the system which Boxee Starter is running on.
+# The initial search which triggers the Boxee launch will time out, but simply tap "Search for hosts" and Boxee should find the desired host.
+# Use Boxee like normal!
+
+**Only iPhone has been tested, but Android is assumed to work based on the current "Boxee Remote Control Interface specification":http://developer.boxee.tv/Remote_Control_Interface.**
+
+If you have problems, or suspect that something might be out of whack, you may wish to run the Debug version of the system which will populate entries in the System Event Log.
+
+You can find both the Debug and Non-Debug versions of BoxeeStarter in the "Downloads":http://github.com/mlb5000/BoxeeStarter/downloads section.
+
+h2. Caveats
+
+# If you run this on multiple machines, Boxee will launch on all of them simultaneously.  Until there is a more robust discovery handshake available in the Remote API, this will have to do.
+# The "Settings..." dialog is currently empty.  If you like this utility and wish for me to add some settings to make it more flexible, please let me know what I can add and I'll do my best to get it implemented.
