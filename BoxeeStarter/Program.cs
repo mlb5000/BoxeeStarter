@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Windows.Forms;
 using BoxeeStarter.Model;
-using BoxeeStarter.Utilities;
 using BoxeeStarter.Utilities.Directories;
 using BoxeeStarter.Utilities.Logging;
+using BoxeeStarter.Utilities.Network;
 using BoxeeStarter.Utilities.Processes;
 using BoxeeStarter.View;
 

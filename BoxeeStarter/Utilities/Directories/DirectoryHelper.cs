@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using BoxeeStarter.Utilities.Logging;
 
 namespace BoxeeStarter.Utilities.Directories
 {
@@ -9,14 +10,19 @@ namespace BoxeeStarter.Utilities.Directories
         {
             string programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string dirPath = programFilesPath + "\\" + program;
-            string dirPath64Bit = programFilesPath + " (x86)" + "\\" + program;
+            EventLogger logger = new EventLogger();
+            logger.Log(String.Format("DirPath 1: {0}", dirPath));
 
             if (Directory.Exists(dirPath))
-            {
                 return dirPath;
-            }
 
-            return Directory.Exists(dirPath64Bit) ? dirPath64Bit : null;
+            dirPath = programFilesPath + " (x86)\\" + program;
+            logger.Log(String.Format("DirPath2: {0}", dirPath));
+
+            if (Directory.Exists(dirPath))
+                return dirPath;
+
+            return null;
         }
     }
 }

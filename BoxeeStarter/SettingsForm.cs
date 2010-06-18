@@ -17,6 +17,19 @@ namespace BoxeeStarter
         public event EventHandler OnMinimized;
         public event EventHandler OnFormExit;
         public event EventHandler OnTrayShowWindow;
+        public event EventHandler OnTrayLoadStartup;
+        public event EventHandler OnRightClickMenuOpened;
+
+        public bool RunAtStartupSelected
+        {
+            get { return runAtStartupToolStripMenuItem.Checked; }
+            set { runAtStartupToolStripMenuItem.Checked = value; }
+        }
+
+        public string ApplicationPath
+        {
+            get { return Application.ExecutablePath; }
+        }
 
         public void ShowWindow()
         {
@@ -49,16 +62,6 @@ namespace BoxeeStarter
             OnTrayShowWindow(this, e);
         }
 
-        private void OnTrayIconMenuItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-            if (e.ClickedItem.Name == "exitButton")
-            {
-                ExitApplication();
-            }
-
-            OnTrayShowWindow(this, e);
-        }
-
         private void OnLoad(object sender, EventArgs e)
         {
             OnFormLoad(this, e);
@@ -73,6 +76,26 @@ namespace BoxeeStarter
         {
             OnFormExit(this, EventArgs.Empty);
             Application.Exit();
+        }
+
+        private void OnRunAtStartupMenuItem_Click(object sender, EventArgs e)
+        {
+            OnTrayLoadStartup(this, e);
+        }
+
+        private void OnExitMenuItem_Click(object sender, EventArgs e)
+        {
+            ExitApplication();
+        }
+
+        private void OnSettingsMenuItem_Click(object sender, EventArgs e)
+        {
+            OnTrayShowWindow(this, e);
+        }
+
+        private void OnRightClickMenu_Opened(object sender, EventArgs e)
+        {
+            OnRightClickMenuOpened(this, e);
         }
     }
 }

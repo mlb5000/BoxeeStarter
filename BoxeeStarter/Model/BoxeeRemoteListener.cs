@@ -2,10 +2,10 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Xml;
-using BoxeeStarter.Utilities;
 using BoxeeStarter.Utilities.Async;
 using BoxeeStarter.Utilities.Directories;
 using BoxeeStarter.Utilities.Logging;
+using BoxeeStarter.Utilities.Network;
 using BoxeeStarter.Utilities.Processes;
 
 namespace BoxeeStarter.Model
@@ -71,7 +71,7 @@ namespace BoxeeStarter.Model
 
             Logger.Log(String.Format("Received Message: {0}", message));
 
-            if (!MessageIsFromIphoneRemote(message))
+            if (!MessageIsBoxeeRemoteDiscover(message))
             {
                 return;
             }
@@ -93,7 +93,7 @@ namespace BoxeeStarter.Model
             Listener.InterruptClient();
         }
 
-        private bool MessageIsFromIphoneRemote(string message)
+        private bool MessageIsBoxeeRemoteDiscover(string message)
         {
             try
             {

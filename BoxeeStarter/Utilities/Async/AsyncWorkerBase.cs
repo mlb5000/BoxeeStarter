@@ -6,7 +6,6 @@ namespace BoxeeStarter.Utilities.Async
     public abstract class AsyncWorkerBase : IAsyncWorker
     {
         private bool _stop;
-        public event EventHandler OnStop;
 
         #region IAsyncWorker Members
 
@@ -28,6 +27,8 @@ namespace BoxeeStarter.Utilities.Async
         }
 
         #endregion
+
+        public event EventHandler OnStop;
 
         public abstract void DoWork();
 

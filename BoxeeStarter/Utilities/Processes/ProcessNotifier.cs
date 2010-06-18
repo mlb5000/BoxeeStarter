@@ -16,9 +16,9 @@ namespace BoxeeStarter.Utilities.Processes
             ProcName = procName;
         }
 
-        protected string ProcName { get; set; }
+        public string ProcName { get; set; }
 
-        protected ProcessFinder Finder
+        public ProcessFinder Finder
         {
             get
             {
@@ -30,7 +30,7 @@ namespace BoxeeStarter.Utilities.Processes
             set { _finder = value; }
         }
 
-        #region INotifier Members
+        #region IAsyncNotifier Members
 
         public event EventHandler NotifyMe;
 
@@ -38,7 +38,7 @@ namespace BoxeeStarter.Utilities.Processes
 
         public override void DoWork()
         {
-            if (!Finder.ProcessAlreadyStarted("BOXEE"))
+            if (!Finder.ProcessAlreadyStarted(ProcName))
                 return;
 
             if (NotifyMe != null)

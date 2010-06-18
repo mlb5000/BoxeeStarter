@@ -1,6 +1,7 @@
 ﻿using System;
 using BoxeeStarter.Model;
 using BoxeeStarter.Presenter;
+using BoxeeStarter.Utilities.Registry;
 using BoxeeStarter.View;
 using NUnit.Framework;
 using Rhino.Mocks;
@@ -11,6 +12,8 @@ namespace BoxeeStarter.Tests.Unit.Presenter
     [TestFixture]
     public class SettingsPresenterTests
     {
+        #region Setup/Teardown
+
         [SetUp]
         public void SetUp()
         {
@@ -19,13 +22,12 @@ namespace BoxeeStarter.Tests.Unit.Presenter
             FakeListener = Mocks.StrictMock<IPortListener>();
             TestPresenter = new SettingsPresenter(FakeView, FakeListener);
 
+            var registry = Mocks.Stub<IWinRegistry>();
+            FakeRegistryHelper = Mocks.StrictMock<RegistryHelper>(registry);
+            TestPresenter.RegistryHelper = FakeRegistryHelper;
+
             Mocks.BackToRecordAll();
         }
-
-        protected IPortListener FakeListener { get; set; }
-        protected ISettingsView FakeView { get; set; }
-        protected SettingsPresenter TestPresenter { get; set; }
-        protected MockRepository Mocks { get; set; }
 
         [TearDown]
         public void TearDown()
@@ -33,126 +35,158 @@ namespace BoxeeStarter.Tests.Unit.Presenter
             Mocks.VerifyAll();
         }
 
-        [Test]
-        public void Initialize_LinksUpToCorrectMethods()
+        #endregion
+
+        protected IPortListener FakeListener { get; set; }
+        protected ISettingsView FakeView { get; set; }
+        protected SettingsPresenter TestPresenter { get; set; }
+        protected MockRepository Mocks { get; set; }
+        protected RegistryHelper FakeRegistryHelper { get; set; }
+
+        protected IEventRaiser OnExitRaiser { get; set; }
+        protected IEventRaiser OnLoadRaiser { get; set; }
+        protected IEventRaiser OnMinRaiser { get; set; }
+        protected IEventRaiser OnTrayShowRaiser { get; set; }
+        protected IEventRaiser OnTrayLoadStartupRaiser { get; set; }
+
+        public void SetViewEventExpectations()
         {
             FakeView.OnFormExit += null;
-            LastCall.IgnoreArguments();
+            OnExitRaiser = LastCall.IgnoreArguments().GetEventRaiser();
 
             FakeView.OnFormLoad += null;
-            LastCall.IgnoreArguments();
+            OnLoadRaiser = LastCall.IgnoreArguments().GetEventRaiser();
 
             FakeView.OnMinimized += null;
-            LastCall.IgnoreArguments();
+            OnMinRaiser = LastCall.IgnoreArguments().GetEventRaiser();
 
             FakeView.OnTrayShowWindow += null;
-            LastCall.IgnoreArguments();
+            OnTrayShowRaiser = LastCall.IgnoreArguments().GetEventRaiser();
 
-            FakeListener.Start();
+            FakeView.OnTrayLoadStartup += null;
+            OnTrayLoadStartupRaiser = LastCall.IgnoreArguments().GetEventRaiser();
 
-            Mocks.ReplayAll();
-
-            TestPresenter.Initialize();
+            FakeView.OnRightClickMenuOpened += null;
+            OnRightClickMenuOpenedRaiser = LastCall.IgnoreArguments().GetEventRaiser();
         }
 
-        [Test]
-        public void OnViewMinimized_HidesForm()
+        protected IEventRaiser OnRightClickMenuOpenedRaiser { get; set; }
+
+        public void SetInitializeExpectations()
         {
-            FakeView.OnFormExit += null;
-            LastCall.IgnoreArguments();
-
-            FakeView.OnFormLoad += null;
-            LastCall.IgnoreArguments();
-
-            FakeView.OnMinimized += null;
-            IEventRaiser raiser = LastCall.IgnoreArguments().GetEventRaiser();
-
-            FakeView.OnTrayShowWindow += null;
-            LastCall.IgnoreArguments();
-
+            SetViewEventExpectations();
             FakeListener.Start();
+        }
 
-            FakeView.HideWindow();
-
-            Mocks.ReplayAll();
-
+        public void InitializeAndRaiseEvent(IEventRaiser raiser)
+        {
             TestPresenter.Initialize();
             raiser.Raise(this, EventArgs.Empty);
         }
 
         [Test]
-        public void OnTrayExit_StopsListener()
+        public void Initialize_LinksUpToCorrectMethods()
         {
-            FakeView.OnFormExit += null;
-            IEventRaiser raiser = LastCall.IgnoreArguments().GetEventRaiser();
+            SetInitializeExpectations();
 
-            FakeView.OnFormLoad += null;
-            LastCall.IgnoreArguments();
+            Mocks.ReplayAll();
 
-            FakeView.OnMinimized += null;
-            LastCall.IgnoreArguments();
+            TestPresenter.Initialize();
+        }
 
-            FakeView.OnTrayShowWindow += null;
-            LastCall.IgnoreArguments();
+        [Test]
+        public void OnTrayLoadStartup_RunAtStartupNotSelected_RemovesStartupFromRegistry()
+        {
+            SetInitializeExpectations();
+            Expect.Call(FakeView.RunAtStartupSelected).Return(false);
+            FakeRegistryHelper.RemoveProgramFromStartup("BoxeeStarter");
 
-            FakeListener.Start();
+            Mocks.ReplayAll();
 
+            InitializeAndRaiseEvent(OnTrayLoadStartupRaiser);
+        }
+
+        [Test]
+        public void OnTrayLoadStartup_RunAtStartupSelected_AddsStartupToRegistry()
+        {
+            SetInitializeExpectations();
+            Expect.Call(FakeView.RunAtStartupSelected).Return(true);
+            Expect.Call(FakeView.ApplicationPath).Return("C:\\Application.exe");
+            FakeRegistryHelper.RunProgramAtStartup("BoxeeStarter", "C:\\Application.exe");
+
+            Mocks.ReplayAll();
+
+            InitializeAndRaiseEvent(OnTrayLoadStartupRaiser);
+        }
+
+        [Test]
+        public void OnTrayLoadStartupRaiser_ProgramNotSetToRunAtStartup_SetsViewToFalse()
+        {
+            SetInitializeExpectations();
+            Expect.Call(FakeView.ApplicationPath).Return("Some Path");
+            Expect.Call(FakeRegistryHelper.ProgramRunningAtStartup("BoxeeStarter", "Some Path")).Return(false);
+            FakeView.RunAtStartupSelected = false;
+
+            Mocks.ReplayAll();
+
+            InitializeAndRaiseEvent(OnRightClickMenuOpenedRaiser);
+        }
+
+        [Test]
+        public void OnTrayLoadStartupRaiser_ProgramSetToRunAtStartup_SetsViewToTrue()
+        {
+            SetInitializeExpectations();
+            Expect.Call(FakeView.ApplicationPath).Return("Some Path");
+            Expect.Call(FakeRegistryHelper.ProgramRunningAtStartup("BoxeeStarter", "Some Path")).Return(true);
+            FakeView.RunAtStartupSelected = true;
+
+            Mocks.ReplayAll();
+
+            InitializeAndRaiseEvent(OnRightClickMenuOpenedRaiser);
+        }
+
+        [Test]
+        public void TestOnFormLoad()
+        {
+            SetInitializeExpectations();
+
+            Mocks.ReplayAll();
+
+            InitializeAndRaiseEvent(OnLoadRaiser);
+        }
+
+        [Test]
+        public void TestOnTrayExit()
+        {
+            SetInitializeExpectations();
             FakeListener.Stop();
 
             Mocks.ReplayAll();
 
-            TestPresenter.Initialize();
-            raiser.Raise(this, EventArgs.Empty);
+            InitializeAndRaiseEvent(OnExitRaiser);
         }
 
         [Test]
-        public void OnTrayShowWindow_StopsListener()
+        public void TestOnTrayShowWindow()
         {
-            FakeView.OnFormExit += null;
-            LastCall.IgnoreArguments();
-
-            FakeView.OnFormLoad += null;
-            LastCall.IgnoreArguments();
-
-            FakeView.OnMinimized += null;
-            LastCall.IgnoreArguments();
-
-            FakeView.OnTrayShowWindow += null;
-            IEventRaiser raiser = LastCall.IgnoreArguments().GetEventRaiser();
-
-            FakeListener.Start();
-
-            FakeView.ShowWindow();
-            FakeView.FocusOnWindow();
+            SetInitializeExpectations();
+            //FakeView.ShowWindow();
+            //FakeView.FocusOnWindow();
 
             Mocks.ReplayAll();
 
-            TestPresenter.Initialize();
-            raiser.Raise(this, EventArgs.Empty);
+            InitializeAndRaiseEvent(OnTrayShowRaiser);
         }
 
         [Test]
-        public void OnFormLoad_StopsListener()
+        public void TestOnViewMinimized()
         {
-            FakeView.OnFormExit += null;
-            LastCall.IgnoreArguments();
-
-            FakeView.OnFormLoad += null;
-            IEventRaiser raiser = LastCall.IgnoreArguments().GetEventRaiser();
-
-            FakeView.OnMinimized += null;
-            LastCall.IgnoreArguments();
-
-            FakeView.OnTrayShowWindow += null;
-            LastCall.IgnoreArguments();
-
-            FakeListener.Start();
+            SetInitializeExpectations();
+            FakeView.HideWindow();
 
             Mocks.ReplayAll();
 
-            TestPresenter.Initialize();
-            raiser.Raise(this, EventArgs.Empty);
+            InitializeAndRaiseEvent(OnMinRaiser);
         }
-
     }
 }

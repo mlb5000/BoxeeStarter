@@ -3,7 +3,7 @@ using System.Net.Sockets;
 using System.Text;
 using BoxeeStarter.Utilities.Logging;
 
-namespace BoxeeStarter.Utilities
+namespace BoxeeStarter.Utilities.Network
 {
     public class UdpListener
     {

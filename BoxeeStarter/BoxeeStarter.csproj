@@ -88,11 +88,12 @@
     <Compile Include="Utilities\Logging\ConsoleLogger.cs" />
     <Compile Include="Utilities\Logging\EventLogger.cs" />
     <Compile Include="Utilities\Logging\ILogger.cs" />
+    <Compile Include="Utilities\Network\UdpListener.cs" />
     <Compile Include="Utilities\Processes\INotifier.cs" />
     <Compile Include="Utilities\Processes\ProcessFinder.cs" />
     <Compile Include="Utilities\Processes\ProcessNotifier.cs" />
     <Compile Include="Utilities\Processes\ProcessStarter.cs" />
-    <Compile Include="Utilities\UdpListener.cs" />
+    <Compile Include="Utilities\Registry\RegistryHelper.cs" />
     <Compile Include="View\ISettingsView.cs" />
     <Compile Include="View\ViewObserver.cs" />
   </ItemGroup>

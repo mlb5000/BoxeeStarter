@@ -33,6 +33,12 @@ namespace BoxeeStarter.Tests.Unit.View
             FakeView.OnTrayShowWindow += null;
             LastCall.IgnoreArguments();
 
+            FakeView.OnTrayLoadStartup += null;
+            LastCall.IgnoreArguments();
+
+            FakeView.OnRightClickMenuOpened += null;
+            LastCall.IgnoreArguments();
+
             FakeListener.Start();
 
             Mocks.ReplayAll();
