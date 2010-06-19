@@ -81,6 +81,8 @@ namespace BoxeeStarter.Model
 
         private void BoxeeProcessStopped(object sender, EventArgs e)
         {
+            ProcNotifier.NotifyProcessStopped -= BoxeeProcessStopped;
+            Logger.Log("Detected Boxee stopping. Starting to listen.");
             BoxeeStoppedEvent.Set();
         }
 
@@ -145,7 +147,6 @@ namespace BoxeeStarter.Model
                 ProcNotifier.NotifyProcessStopped += BoxeeProcessStopped;
                 BoxeeStoppedEvent.WaitOne();
                 BoxeeStoppedEvent.Reset();
-                ProcNotifier.NotifyProcessStopped -= BoxeeProcessStopped;
             }
 
             if (_stop)
