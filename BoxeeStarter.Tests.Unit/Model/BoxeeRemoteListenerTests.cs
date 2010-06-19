@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Threading;
 using BoxeeStarter.Model;
-using BoxeeStarter.Utilities.Async;
 using BoxeeStarter.Utilities.Directories;
 using BoxeeStarter.Utilities.Logging;
 using BoxeeStarter.Utilities.Network;
@@ -26,7 +26,7 @@ namespace BoxeeStarter.Tests.Unit.Model
             UdpListener = Mocks.StrictMock<UdpListener>();
             ProcStarter = Mocks.StrictMock<ProcessStarter>();
             DirHelper = Mocks.StrictMock<DirectoryHelper>();
-            ProcNotifier = Mocks.StrictMock<IAsyncNotifier>();
+            ProcNotifier = Mocks.StrictMock<IProcessNotifier>();
 
             Listener = new BoxeeRemoteListener
                            {
@@ -73,134 +73,172 @@ namespace BoxeeStarter.Tests.Unit.Model
         protected UdpListener UdpListener { get; set; }
         protected ProcessStarter ProcStarter { get; set; }
         protected DirectoryHelper DirHelper { get; set; }
-        protected IAsyncNotifier ProcNotifier { get; set; }
+        protected IProcessNotifier ProcNotifier { get; set; }
+
+        public void StartListening()
+        {
+            var t = new Thread(ThreadProc);
+            t.Start();
+            Thread.Sleep(500);
+        }
+
+        public void ThreadProc()
+        {
+            Listener.Listen();
+        }
 
         [Test]
-        public void ListenForRemote_BoxeeIsRunning_Returns()
+        public void Listen_BoxeeAlreadyRunning_BlocksUntilBoxeeStops()
         {
             Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(true);
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = RemoteDiscoverXML;
+            Expect.Call(DirHelper.GetProgramDirFor("Boxee")).Return("Something");
+            ProcStarter.StartProcess(null);
+            LastCall.IgnoreArguments();
+            ProcNotifier.NotifyProcessStarted += null;
+            LastCall.IgnoreArguments().GetEventRaiser();
+            ProcNotifier.NotifyProcessStopped += null;
+            IEventRaiser stopRaiser = LastCall.IgnoreArguments().GetEventRaiser();
+            ProcNotifier.NotifyProcessStopped -= null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
 
             Mocks.ReplayAll();
-            Listener.ListenForRemote();
+            StartListening();
+            stopRaiser.Raise(this, EventArgs.Empty);
+            UdpListener.PacketReceived.Set();
+            Thread.Sleep(500);
+        }
+
+        [Test]
+        public void Listen_BoxeeNotRunning_ReceivesGoodPacket_StartsBoxee()
+        {
+            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = RemoteDiscoverXML;
+            Expect.Call(DirHelper.GetProgramDirFor("Boxee")).Return("Something");
+            ProcStarter.StartProcess(null);
+            LastCall.IgnoreArguments();
+            ProcNotifier.NotifyProcessStarted += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
+
+            Mocks.ReplayAll();
+            StartListening();
+            UdpListener.PacketReceived.Set();
+        }
+
+        [Test]
+        public void Listen_BoxeeNotRunning_CommandNotDiscover_Returns()
+        {
+            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = RemoteNotDiscoverXml;
+            ProcNotifier.NotifyProcessStarted += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
+
+            Mocks.ReplayAll();
+            StartListening();
+            UdpListener.PacketReceived.Set();
+        }
+        
+        [Test]
+        public void Listen_BoxeeNotRunning_CommandDidNotComeFromiPhone_Returns()
+        {
+            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = RemoteNotiPhoneXml;
+            ProcNotifier.NotifyProcessStarted += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
+
+            Mocks.ReplayAll();
+            StartListening();
+            UdpListener.PacketReceived.Set();
+        }
+
+        [Test]
+        public void Listen_BoxeeNotRunning_CommandNotXml_Returns()
+        {
+            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = NotXml;
+            ProcNotifier.NotifyProcessStarted += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
+
+            Mocks.ReplayAll();
+            StartListening();
+            UdpListener.PacketReceived.Set();
+        }
+
+        [Test]
+        public void Listen_BoxeeNotRunning_CommandWrongChallenge_Returns()
+        {
+            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = RemoteWrongChallengeXml;
+            ProcNotifier.NotifyProcessStarted += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
+
+            Mocks.ReplayAll();
+            StartListening();
+            UdpListener.PacketReceived.Set();
+        }
+
+        [Test]
+        public void Listen_BoxeeNotRunning_CommandMissingBdp1Node_Returns()
+        {
+            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = ValidXmlNoBdp1Node;
+            ProcNotifier.NotifyProcessStarted += null;
+            LastCall.IgnoreArguments();
+            ProcNotifier.Start();
+
+            Mocks.ReplayAll();
+            StartListening();
+            UdpListener.PacketReceived.Set();
         }
 
         [Test]
         public void ListenForRemote_BoxeeNotInstalled_Returns()
         {
             Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
-            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(RemoteDiscoverXML).Repeat.Any();
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = RemoteDiscoverXML;
             Expect.Call(DirHelper.GetProgramDirFor("Boxee")).Return(null);
-            ProcNotifier.NotifyMe += null;
+            ProcNotifier.NotifyProcessStarted += null;
             LastCall.IgnoreArguments();
             ProcNotifier.Start();
 
             Mocks.ReplayAll();
 
-            Listener.ListenForRemote();
-        }
-
-        [Test]
-        public void ListenForRemote_BoxeeNotRunningNotXml_Returns()
-        {
-            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
-            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(NotXml).Repeat.Any();
-            ProcNotifier.NotifyMe += null;
-            LastCall.IgnoreArguments();
-            ProcNotifier.Start();
-
-            Mocks.ReplayAll();
-
-            Listener.ListenForRemote();
+            StartListening();
+            UdpListener.PacketReceived.Set();
         }
 
         [Test]
         public void ListenForRemote_BoxeeStartsInBackground_StopsListening()
         {
             Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
-            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return("").Repeat.Any();
-            ProcNotifier.NotifyMe += null;
+            UdpListener.ListenForUdpPacket(2562);
+            UdpListener.Message = String.Empty;
+            ProcNotifier.NotifyProcessStarted += null;
             IEventRaiser raiser = LastCall.IgnoreArguments().GetEventRaiser();
             ProcNotifier.Start();
             UdpListener.InterruptClient();
-            ProcNotifier.NotifyMe -= null;
+            ProcNotifier.NotifyProcessStarted -= null;
             LastCall.IgnoreArguments();
 
             Mocks.ReplayAll();
-            Listener.ListenForRemote();
-
+            StartListening();
             raiser.Raise(this, EventArgs.Empty);
-        }
-
-        [Test]
-        public void ListenForRemote_CommandDidNotComeFromiPhone_Returns()
-        {
-            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
-            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(RemoteNotiPhoneXml).Repeat.Any();
-            ProcNotifier.NotifyMe += null;
-            LastCall.IgnoreArguments();
-            ProcNotifier.Start();
-
-            Mocks.ReplayAll();
-
-            Listener.ListenForRemote();
-        }
-
-        [Test]
-        public void ListenForRemote_CommandHasIncorrectChallenge_Returns()
-        {
-            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
-            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(RemoteWrongChallengeXml).Repeat.Any();
-            ProcNotifier.NotifyMe += null;
-            LastCall.IgnoreArguments();
-            ProcNotifier.Start();
-
-            Mocks.ReplayAll();
-
-            Listener.ListenForRemote();
-        }
-
-        [Test]
-        public void ListenForRemote_CommandMissingBdp1XmlNode_Returns()
-        {
-            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
-            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(ValidXmlNoBdp1Node).Repeat.Any();
-            ProcNotifier.NotifyMe += null;
-            LastCall.IgnoreArguments();
-            ProcNotifier.Start();
-
-            Mocks.ReplayAll();
-
-            Listener.ListenForRemote();
-        }
-
-        [Test]
-        public void ListenForRemote_HappyPath_StartsBoxee()
-        {
-            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
-            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(RemoteDiscoverXML).Repeat.Any();
-            Expect.Call(DirHelper.GetProgramDirFor("Boxee")).Return("Something");
-            ProcStarter.StartProcess(null);
-            LastCall.IgnoreArguments();
-            ProcNotifier.NotifyMe += null;
-            LastCall.IgnoreArguments();
-            ProcNotifier.Start();
-
-            Mocks.ReplayAll();
-            Listener.ListenForRemote();
-        }
-
-        [Test]
-        public void ListenForRemote_WrongXmlCommand_Returns()
-        {
-            Expect.Call(ProcFinder.ProcessAlreadyStarted("BOXEE")).Return(false);
-            Expect.Call(UdpListener.ListenForUdpPacket(2562)).Return(RemoteNotDiscoverXml).Repeat.Any();
-            ProcNotifier.NotifyMe += null;
-            LastCall.IgnoreArguments();
-            ProcNotifier.Start();
-
-            Mocks.ReplayAll();
-
-            Listener.ListenForRemote();
+            UdpListener.PacketReceived.Set();
+            Thread.Sleep(500);
         }
 
         [Test]

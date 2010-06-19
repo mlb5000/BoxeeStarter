@@ -22,11 +22,10 @@ namespace BoxeeStarter.Tests.Unit.Utilities.Network
 
         protected UdpListener Listener { get; set; }
         protected const int TestPort = 45678;
-        protected string Message { get; set; }
 
         public void ThreadProc()
         {
-            Message = Listener.ListenForUdpPacket(TestPort);
+            Listener.ListenForUdpPacket(TestPort);
         }
 
         [Test]
@@ -39,7 +38,7 @@ namespace BoxeeStarter.Tests.Unit.Utilities.Network
             byte[] datagram = Encoding.ASCII.GetBytes("test message");
             client.Send(datagram, datagram.Length, Dns.GetHostName(), TestPort);
             Thread.Sleep(1000);
-            Assert.AreEqual("test message", Message);
+            Assert.AreEqual("test message", Listener.Message);
         }
 
         [Test]

@@ -8,9 +8,9 @@ namespace BoxeeStarter.Utilities.Logging
 
         public void Log(string message)
         {
-#if DEBUG
+//#if DEBUG
             EventLog.WriteEntry("BoxeeStarter", message);
-#endif
+//#endif
         }
 
         #endregion

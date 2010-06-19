@@ -1,48 +1,85 @@
 ﻿using System;
-using BoxeeStarter.Utilities.Async;
+using System.Management;
+using System.Threading;
+using BoxeeStarter.Utilities.Logging;
 
 namespace BoxeeStarter.Utilities.Processes
 {
-    public class ProcessNotifier : AsyncWorkerBase, IAsyncNotifier
+    public class ProcessNotifier : IProcessNotifier
     {
-        private ProcessFinder _finder;
-
-        public ProcessNotifier()
-        {
-        }
-
         public ProcessNotifier(string procName)
         {
             ProcName = procName;
+            StartWatcher = new ManagementEventWatcher(new WqlEventQuery("SELECT * FROM Win32_ProcessStartTrace"));
+            StartWatcher.EventArrived += StartEventArrived;
+            StopWatcher = new ManagementEventWatcher(new WqlEventQuery("SELECT * FROM Win32_ProcessStopTrace"));
+            StopWatcher.EventArrived += StopEventArrived;
         }
 
         public string ProcName { get; set; }
+        private ManagementEventWatcher StartWatcher { get; set; }
+        private ManagementEventWatcher StopWatcher { get; set; }
 
-        public ProcessFinder Finder
+        #region IProcessNotifier Members
+
+        public event EventHandler NotifyProcessStarted;
+
+        public Thread WorkerThread
         {
-            get
-            {
-                if (_finder == null)
-                    _finder = new ProcessFinder();
-
-                return _finder;
-            }
-            set { _finder = value; }
+            get { throw new NotImplementedException(); }
+            set { throw new NotImplementedException(); }
         }
 
-        #region IAsyncNotifier Members
+        public void Start()
+        {
+            StartWatcher.Start();
+            StopWatcher.Start();
+        }
 
-        public event EventHandler NotifyMe;
+        public void Stop()
+        {
+            StartWatcher.Stop();
+            StopWatcher.Stop();
+        }
 
         #endregion
 
-        public override void DoWork()
+        private void StopEventArrived(object sender, EventArrivedEventArgs e)
         {
-            if (!Finder.ProcessAlreadyStarted(ProcName))
+            var procName = ((string) e.NewEvent.Properties["ProcessName"].Value);
+            new EventLogger().Log(String.Format("Process Stopped: {0}", procName));
+            ProcessStopped(procName);
+        }
+
+        public void ProcessStopped(string name)
+        {
+            if (NotifyProcessStopped == null)
                 return;
 
-            if (NotifyMe != null)
-                NotifyMe(this, EventArgs.Empty);
+            if (name.Equals(ProcName, StringComparison.InvariantCultureIgnoreCase))
+            {
+                NotifyProcessStopped(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler NotifyProcessStopped;
+
+        private void StartEventArrived(object sender, EventArrivedEventArgs e)
+        {
+            var procName = ((string) e.NewEvent.Properties["ProcessName"].Value);
+            new EventLogger().Log(String.Format("Process Started: {0}", procName));
+            ProcessStarted(procName);
+        }
+
+        public void ProcessStarted(string name)
+        {
+            if (NotifyProcessStarted == null)
+                return;
+
+            if (name.Equals(ProcName, StringComparison.InvariantCultureIgnoreCase))
+            {
+                NotifyProcessStarted(this, EventArgs.Empty);
+            }
         }
     }
 }

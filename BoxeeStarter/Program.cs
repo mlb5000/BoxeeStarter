@@ -27,7 +27,7 @@ namespace BoxeeStarter
                                    ProcStarter = new ProcessStarter(),
                                    DirHelper = new DirectoryHelper(),
                                    Listener = new UdpListener(),
-                                   ProcNotifier = new ProcessNotifier("BOXEE")
+                                   ProcNotifier = new ProcessNotifier("BOXEE.exe")
                                };
             var mainForm = new SettingsForm();
             ViewObserver.Observe(mainForm, listener);

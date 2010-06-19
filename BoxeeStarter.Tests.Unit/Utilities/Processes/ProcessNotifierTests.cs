@@ -1,7 +1,6 @@
 ﻿using System;
 using BoxeeStarter.Utilities.Processes;
 using NUnit.Framework;
-using Rhino.Mocks;
 
 namespace BoxeeStarter.Tests.Unit.Utilities.Processes
 {
@@ -13,82 +12,61 @@ namespace BoxeeStarter.Tests.Unit.Utilities.Processes
         [SetUp]
         public void SetUp()
         {
-            Mocks = new MockRepository();
-            Finder = Mocks.StrictMock<ProcessFinder>();
-            Notifier = new ProcessNotifier {Finder = Finder};
-            Notifier.NotifyMe += NotifyDelegate;
-            Notified = false;
-            Notifier.ProcName = ProcessName;
-
-            Mocks.BackToRecordAll();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Mocks.VerifyAll();
+            Notifier = new ProcessNotifier(ProcessName);
+            StartNotified = false;
+            StopNotified = false;
+            Notifier.NotifyProcessStarted += StartDelegate;
+            Notifier.NotifyProcessStopped += StopDelegate;
         }
 
         #endregion
 
-        protected const string ProcessName = "ProcName";
-
-        private void NotifyDelegate(object sender, EventArgs e)
+        private void StopDelegate(object sender, EventArgs e)
         {
-            Notified = true;
+            StopNotified = true;
+        }
+
+        protected const string ProcessName = "ProcName.exe";
+
+        private void StartDelegate(object sender, EventArgs e)
+        {
+            StartNotified = true;
         }
 
         protected ProcessNotifier Notifier { get; set; }
-        protected ProcessFinder Finder { get; set; }
-        protected MockRepository Mocks { get; set; }
-        protected bool Notified { get; set; }
+        protected bool StartNotified { get; set; }
+        protected bool StopNotified { get; set; }
 
         [Test]
-        public void DoWork_ProcessIsNotRunning_DoesNotCallDelegate()
+        public void ProcessStarted_IsNotWhatWeCareAbout_DoesNotCallDelegate()
         {
-            Expect.Call(Finder.ProcessAlreadyStarted(ProcessName)).Return(false);
+            Notifier.ProcessStarted("lkjdsflkj");
 
-            Mocks.ReplayAll();
-            Notifier.DoWork();
-
-            Assert.IsFalse(Notified);
+            Assert.IsFalse(StartNotified);
         }
 
         [Test]
-        public void DoWork_ProcessIsRunning_CallsDelegate()
+        public void ProcessStarted_IsWhatWeCareAbout_CallsDelegate()
         {
-            Expect.Call(Finder.ProcessAlreadyStarted(ProcessName)).Return(true);
+            Notifier.ProcessStarted(ProcessName);
 
-            Mocks.ReplayAll();
-            Notifier.DoWork();
-
-            Assert.IsTrue(Notified);
+            Assert.IsTrue(StartNotified);
         }
 
         [Test]
-        public void DoWork_ProductionConstructorProcessExists_CallsDelegate()
+        public void ProcessStopped_IsNotWhatWeCareAbout_DoesNotCallDelegate()
         {
-            Notifier = new ProcessNotifier("services");
-            Notifier.Finder = Finder;
-            Notifier.NotifyMe += NotifyDelegate;
-            Expect.Call(Finder.ProcessAlreadyStarted("services")).Return(true);
+            Notifier.ProcessStopped("ljdsfj");
 
-            Mocks.ReplayAll();
-            Notifier.DoWork();
-
-            Assert.IsTrue(Notified);
+            Assert.IsFalse(StopNotified);
         }
 
         [Test]
-        public void DoWork_ProductionConstructorAndFinderProcessExists_CallsDelegate()
+        public void ProcessStopped_IsWhatWeCareAbout_DoesNotCallDelegate()
         {
-            Notifier = new ProcessNotifier("services");
-            Notifier.NotifyMe += NotifyDelegate;
+            Notifier.ProcessStopped(ProcessName);
 
-            Mocks.ReplayAll();
-            Notifier.DoWork();
-
-            Assert.IsTrue(Notified);
+            Assert.IsTrue(StopNotified);
         }
     }
 }

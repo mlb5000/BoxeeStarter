@@ -5,7 +5,7 @@ namespace BoxeeStarter.Utilities.Async
 {
     public abstract class AsyncWorkerBase : IAsyncWorker
     {
-        private bool _stop;
+        protected bool _stop;
 
         #region IAsyncWorker Members
 
