@@ -48,7 +48,6 @@ namespace BoxeeStarter.Model
         public void ListenForRemote()
         {
             ProcNotifier.NotifyProcessStarted += BoxeeProcessStarted;
-            ProcNotifier.Start();
             Logger.Log(String.Format("Now waiting for a connection on port {0}", PortNumber));
             Listener.ListenForUdpPacket(PortNumber);
             //block until the packet is received
@@ -139,6 +138,7 @@ namespace BoxeeStarter.Model
 
         public void Listen()
         {
+            ProcNotifier.Start();
             if (ProcFinder.ProcessAlreadyStarted("BOXEE"))
             {
                 Logger.Log("Boxee is already running!");
